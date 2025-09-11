@@ -1,0 +1,42 @@
+name: Serverless Deploy
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - name: Install Serverless Framework CLI
+        run: npm install -g serverless@3
+
+      - name: Change to auth-server directory
+        working-directory: ./auth-server
+        run: |
+          pwd
+          ls -la
+
+      - name: Install dependencies
+        working-directory: ./auth-server
+        run: npm ci
+
+      - name: Deploy with Serverless
+        working-directory: ./auth-server
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          CLIENT_ID: ${{ secrets.CLIENT_ID }}
+          CLIENT_SECRET: ${{ secrets.CLIENT_SECRET }}
+          CALENDAR_ID: ${{ secrets.CALENDAR_ID }}
+          SERVERLESS_ACCESS_KEY: ${{ secrets.SERVERLESS_ACCESS_KEY }}
+        run: serverless deploy
