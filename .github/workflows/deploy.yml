@@ -10,33 +10,38 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout repository
+        uses: actions/checkout@v3
 
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: 18
 
-      - name: Install Serverless Framework CLI
-        run: npm install -g serverless@3
-
-      - name: Change to auth-server directory
-        working-directory: ./auth-server
-        run: |
-          pwd
-          ls -la
-
       - name: Install dependencies
         working-directory: ./auth-server
         run: npm ci
 
-      - name: Deploy with Serverless
+      - name: Debug: Check SERVERLESS_ACCESS_KEY presence
+        working-directory: ./auth-server
+        run: |
+          if [ -z "$SERVERLESS_ACCESS_KEY" ]; then
+            echo "❌ SERVERLESS_ACCESS_KEY is NOT set!"
+            exit 1
+          else
+            echo "✅ SERVERLESS_ACCESS_KEY is set"
+          fi
+        env:
+          SERVERLESS_ACCESS_KEY: ${{ secrets.SERVERLESS_ACCESS_KEY }}
+
+      - name: Deploy with Serverless Framework
         working-directory: ./auth-server
         env:
+          SERVERLESS_ACCESS_KEY: ${{ secrets.SERVERLESS_ACCESS_KEY }}
+          SLS_ACCESS_KEY: ${{ secrets.SERVERLESS_ACCESS_KEY }}  # fallback
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           CLIENT_ID: ${{ secrets.CLIENT_ID }}
           CLIENT_SECRET: ${{ secrets.CLIENT_SECRET }}
           CALENDAR_ID: ${{ secrets.CALENDAR_ID }}
-          SERVERLESS_ACCESS_KEY: ${{ secrets.SERVERLESS_ACCESS_KEY }}
-        run: serverless deploy
+        run: npx serverless deploy --stage dev --verbose
